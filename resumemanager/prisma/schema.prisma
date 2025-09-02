@@ -1,0 +1,95 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  resumes       ResumeMaster[]
+  variants      Variant[]
+  templates     Template[]
+  coverLetters  CoverLetter[]
+  jobApplications JobApplication[]
+}
+
+model ResumeMaster {
+  id        String   @id @default(cuid())
+  owner     User     @relation(fields: [ownerId], references: [id])
+  ownerId   String
+  json      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  changelogs  ChangeLog[]
+}
+
+model Variant {
+  id              String   @id @default(cuid())
+  owner           User     @relation(fields: [ownerId], references: [id])
+  ownerId         String
+  name            String
+  rulesJson       String
+  overridesJson   String
+  template        Template? @relation(fields: [templateId], references: [id])
+  templateId      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  jobApplications JobApplication[]
+  changelogs      ChangeLog[]
+}
+
+model Template {
+  id      String    @id @default(cuid())
+  owner   User      @relation(fields: [ownerId], references: [id])
+  ownerId String
+  name    String
+  engine  String    // "jsx"
+  source  String
+  variants Variant[]
+}
+
+model CoverLetter {
+  id        String   @id @default(cuid())
+  owner     User     @relation(fields: [ownerId], references: [id])
+  ownerId   String
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  jobApplications JobApplication[]
+}
+
+model JobApplication {
+  id            String       @id @default(cuid())
+  owner         User         @relation(fields: [ownerId], references: [id])
+  ownerId       String
+  company       String
+  role          String
+  source        String
+  url           String?
+  status        String       // Prospect, Applied, Interview, Offer, Closed
+  location      String?
+  jdText        String?
+  variant       Variant?     @relation(fields: [variantId], references: [id])
+  variantId     String?
+  coverLetter   CoverLetter? @relation(fields: [coverLetterId], references: [id])
+  coverLetterId String?
+  appliedOn     DateTime?
+  notes         String?
+}
+
+model ChangeLog {
+  id        String   @id @default(cuid())
+  master    ResumeMaster? @relation(fields: [masterId], references: [id])
+  masterId  String?
+  variant   Variant?  @relation(fields: [variantId], references: [id])
+  variantId String?
+  before    String
+  after     String
+  createdAt DateTime @default(now())
+}
